@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoraNet — Disaster & Emergency Mesh Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E85D3F'><circle cx='12' cy='12' r='10'/></svg>">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS (Local Vendor Copy - 100% Offline Compatible) -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  
+  <!-- Custom Vanilla CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+        </div>
+        <div>
+          <div class="logo-title">LoraNet</div>
+          <div class="logo-subtitle">Emergency Mesh</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" data-view="map">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+          <span>Live Map</span>
+        </button>
+        <button class="nav-item" data-view="mesh">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="6" x="3" y="3" rx="1"/><rect width="6" height="6" x="15" y="3" rx="1"/><rect width="6" height="6" x="9" y="15" rx="1"/><path d="m6 9 3 6"/><path d="m18 9-3 6"/></svg>
+          <span>Mesh Network</span>
+        </button>
+        <button class="nav-item" data-view="alerts">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          <span>Emergency Alerts</span>
+          <span class="badge-count" id="alertsCountBadge">0</span>
+        </button>
+        <button class="nav-item" data-view="devices">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+          <span>Devices</span>
+        </button>
+        <button class="nav-item" data-view="messages">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Messages</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- Bottom Hardware Status -->
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <div class="status-dot green" id="gpsIndicatorDot"></div>
+          <div>
+            <div class="status-title" id="gpsStatusText">GPS Active</div>
+            <div class="status-sub" id="gpsPrecisionText">Reading laptop sensors</div>
+          </div>
+        </div>
+
+        <div class="status-indicator mt-2">
+          <div class="status-dot orange" id="arduinoIndicatorDot"></div>
+          <div>
+            <div class="status-title" id="arduinoStatusText">Arduino: Waiting</div>
+            <div class="status-sub" id="arduinoSubText">No nodes connected</div>
+          </div>
+        </div>
+
+        <div class="operator-profile">
+          <div class="profile-avatar" id="operatorAvatar">NA</div>
+          <div>
+            <div class="profile-name" id="operatorNodeName">NODE A</div>
+            <div class="profile-role" id="operatorNodeRole">Coordinator / Host Base</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h1 class="page-title" id="pageTitle">Overview</h1>
+            <p class="page-subtitle" id="pageSubtitle">Live GPS telemetry & mesh node monitoring</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Real Clock -->
+          <div class="real-time-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="mono-time" id="liveTimeDisplay">--:--:--</span>
+            <span class="divider">|</span>
+            <span id="liveDateDisplay">Loading Date...</span>
+          </div>
+
+          <!-- Real GPS Badge -->
+          <div class="pill-badge pill-gps" id="headerGpsBadge">
+            <div class="dot pulse"></div>
+            <span id="headerGpsCoords">Detecting Laptop GPS...</span>
+          </div>
+
+          <!-- Active Node Identity Selector (Node A vs Node B) -->
+          <div class="node-role-toggle-group" id="nodeRoleToggleGroup" title="Switch Local Dashboard Identity">
+            <button type="button" class="btn-role-tab active" id="btnRoleNodeA" data-role="NODE_A">
+              <span class="role-dot dot-a"></span>
+              <span>Node A (Host)</span>
+            </button>
+            <button type="button" class="btn-role-tab" id="btnRoleNodeB" data-role="NODE_B">
+              <span class="role-dot dot-b"></span>
+              <span>Node B (Field)</span>
+            </button>
+          </div>
+
+          <!-- Arduino / ESP32 Connect Button -->
+          <button class="btn btn-secondary btn-sm" id="btnConnectSerial" title="Connect ESP32 Node A via USB Serial">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span id="btnConnectSerialText">Connect USB</span>
+          </button>
+
+          <!-- WiFi TCP Connect Button -->
+          <button class="btn btn-secondary btn-sm" id="btnConnectTcp" title="Connect ESP32 Node A via WiFi TCP Bridge (Port 3333)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+            <span id="btnConnectTcpText">WiFi TCP</span>
+          </button>
+
+          <!-- Speaker Test Button -->
+          <button class="btn btn-secondary btn-sm" id="btnTestSpeaker" title="Test Laptop Speaker Sound">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span>Speaker Test</span>
+          </button>
+
+          <!-- Voice Note SOS Button (Accessible for Blind/Illiterate) -->
+          <button class="btn btn-emergency-voice" id="btnHeaderVoiceSos" title="Record & Transmit Voice Note SOS (Accessible for Blind & Illiterate)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            <span>🎙️ Voice SOS</span>
+          </button>
+
+          <!-- Emergency SOS Trigger Button -->
+          <button class="btn btn-emergency" id="btnBroadcastSos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            <span>Trigger SOS</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      <main class="content-container">
+        <!-- 1. OVERVIEW VIEW -->
+        <section class="view-panel active" id="view-overview">
+          <!-- Metric Cards Row -->
+          <div class="metrics-grid">
+            <!-- Card 1: Laptop Live GPS -->
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Laptop Base GPS</span>
+                <div class="metric-actions">
+                  <button type="button" class="btn-xs-link" id="btnOpenGpsModal" title="Calibrate / Set Coordinates Manually">⚙️ Set GPS</button>
+                  <span class="badge badge-success" id="gpsStatusBadge">Acquiring</span>
+                </div>
+              </div>
+              <div class="metric-value font-mono" id="overviewGpsCoords">--° N, --° E</div>
+              <div class="metric-sub" id="overviewGpsDetail">Waiting for laptop browser permission...</div>
+            </div>
+
+            <!-- Card 2: Connected Nodes -->
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Connected Mesh Nodes</span>
+                <span class="badge badge-neutral" id="nodesBadge">0 Active</span>
+              </div>
+              <div class="metric-value" id="overviewNodesCount">0</div>
+              <div class="metric-sub" id="overviewNodesSub">Awaiting Arduino LoRa gateway packets</div>
+            </div>
+
+            <!-- Card 3: Active Alerts -->
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Active Emergencies</span>
+                <span class="badge badge-neutral" id="alertsStatusBadge">Normal Mode</span>
+              </div>
+              <div class="metric-value text-txt" id="overviewAlertsCount">0</div>
+              <div class="metric-sub">No active distress beacons received</div>
+            </div>
+
+            <!-- Card 4: Hardware Gateway -->
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label" id="gatewayCardTitle">Arduino Gateway</span>
+                <span class="badge badge-warning" id="gatewayStatusBadge">Disconnected</span>
+              </div>
+              <div class="metric-value" id="overviewGatewayState">Offline</div>
+              <div class="metric-sub" id="overviewGatewaySub">Plug Arduino into USB port & click Connect</div>
+            </div>
+          </div>
+
+          <!-- Main Row: Map + Message & Hardware Columns -->
+          <div class="layout-split">
+            <!-- Left Column: Leaflet Map Container -->
+            <!-- Left Column: Leaflet Map Container & Offline Tactical Radar -->
+            <div class="content-card card-map">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">Live Tactical Map</h2>
+                  <span class="badge badge-success" id="overviewMapStatusBadge">REAL LAPTOP GPS</span>
+                </div>
+                <div class="map-quick-actions">
+                  <div class="map-mode-toggle">
+                    <button type="button" class="map-mode-btn" id="btnModeRadar">📡 Offline Radar</button>
+                    <button type="button" class="map-mode-btn active" id="btnModeTiles">🌐 Street Map</button>
+                  </div>
+                  <button class="btn btn-sm" id="btnCenterMap">Center</button>
+                  <button class="btn btn-sm" id="btnRefreshGps">Refresh GPS</button>
+                </div>
+              </div>
+              <div class="map-body">
+                <div id="overviewMap" class="leaflet-map-element"></div>
+                <div id="overviewRadarView" class="tactical-radar-view" style="display: none;">
+                  <canvas id="overviewRadarCanvas" class="tactical-radar-canvas"></canvas>
+                  <div class="radar-overlay-info">
+                    <div class="radar-hud-coords">
+                      <span class="hud-label">BASE STATION GPS:</span>
+                      <span class="hud-val font-mono" id="overviewRadarCoords">--° N, --° E</span>
+                    </div>
+                    <div class="radar-hud-scale">
+                      <span>Max Radius: 5 km</span> · <span>Azimuth: 360° True North</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column Stack: Quick Message Column + Hardware Connectivity -->
+            <div class="right-column-stack">
+              <!-- Quick Message & Data Transmitter Card -->
+              <div class="content-card card-quick-message">
+                <div class="card-header">
+                  <div class="card-title-group">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <h2 class="card-title">Quick LoRa Data & Message</h2>
+                  </div>
+                  <span class="badge badge-success">READY</span>
+                </div>
+
+                <div class="card-body">
+                  <!-- Quick Data Preset Chips -->
+                  <div class="quick-presets-row">
+                    <span class="preset-label">Quick Data:</span>
+                    <button type="button" class="chip-preset" id="btnPresetGps">📍 My Real GPS</button>
+                    <button type="button" class="chip-preset" id="btnPresetPing">⚡ Ping Mesh</button>
+                    <button type="button" class="chip-preset chip-voice-sos" id="btnOpenVoiceRecorder">🎙️ Voice Note SOS (Accessible)</button>
+                  </div>
+
+                  <!-- Quick Send Form -->
+                  <form id="overviewMsgForm" class="form-vertical mt-2">
+                    <div class="form-row-split">
+                      <div class="form-group flex-1">
+                        <label class="form-label">Destination Node</label>
+                        <select class="form-input form-input-sm" id="overviewMsgRecipient">
+                          <option value="BROADCAST">BROADCAST (All Field Nodes)</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select class="form-input form-input-sm" id="overviewMsgPriority">
+                          <option value="NORMAL">Normal</option>
+                          <option value="HIGH">High Priority</option>
+                          <option value="EMERGENCY">Emergency SOS</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <div class="flex-between">
+                        <label class="form-label">Data Payload (ASCII)</label>
+                        <span class="char-count"><span id="overviewMsgCharCount">0</span> / 222 bytes</span>
+                      </div>
+                      <textarea
+                        class="form-input"
+                        id="overviewMsgContent"
+                        rows="3"
+                        placeholder="Type message or click 'My Real GPS' to attach coordinates..."
+                        maxlength="222"
+                      ></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full" id="btnOverviewSend">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                      <span>Transmit Data over LoRa / USB</span>
+                    </button>
+                  </form>
+
+                  <!-- Live Radio Traffic Tabs & Feed (Received & Sent) -->
+                  <div class="radio-traffic-section mt-3">
+                    <div class="traffic-header">
+                      <div class="traffic-title-tabs">
+                        <button type="button" class="traffic-tab-btn active" id="btnTabRx">📥 Received (<span id="rxCountBadge">0</span>)</button>
+                        <button type="button" class="traffic-tab-btn" id="btnTabTx">📤 Sent (<span id="txCountBadge">0</span>)</button>
+                      </div>
+                      <button type="button" class="btn-xs-link" id="btnTestIncomingMsg" title="Simulate a test received packet from field node">🧪 Test Receive</button>
+                    </div>
+
+                    <div class="traffic-feed-container" id="overviewRadioTrafficFeed">
+                      <div class="traffic-empty-state" id="trafficEmptyState">
+                        <div class="empty-hint">Awaiting incoming LoRa messages...</div>
+                        <div class="empty-sub">Plug in Arduino or click 'Test Receive' to preview</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Node Connectivity & Arduino Wait Status Card -->
+              <div class="content-card card-nodes">
+                <div class="card-header">
+                  <div class="card-title-group">
+                    <h2 class="card-title">LoRa Mesh Nodes</h2>
+                    <span class="badge badge-warning" id="meshNodesCardBadge">Awaiting Arduino Code</span>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <div class="waiting-box compact">
+                    <div class="waiting-icon-pulse small">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div class="waiting-compact-info">
+                      <h3 class="waiting-title text-sm" id="waitingBoxTitle">ESP32 Node A Gateway</h3>
+                      <p class="waiting-desc text-xs" id="waitingBoxSub">
+                        Connect via USB (COM9) or WiFi TCP (Port 3333) to link with Node B transceiver.
+                      </p>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                      <button class="btn btn-primary btn-sm" id="btnConnectSerialOverview">
+                        Connect USB
+                      </button>
+                      <button class="btn btn-secondary btn-sm" id="btnConnectTcpOverview">
+                        WiFi TCP
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Detected Nodes List (empty until real nodes arrive) -->
+                  <div class="node-list-container" id="overviewNodeList">
+                    <div class="empty-state-text">
+                      0 LoRa transceiver nodes connected.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Split between Live Received Messages Hub & Activity Audit Log -->
+          <div class="layout-split mt-6">
+            <!-- Left: Live Received Messages Hub (LoRa RX) -->
+            <div class="content-card card-received-hub">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <h2 class="card-title">Live Received Messages (LoRa RX Feed)</h2>
+                  <span class="badge badge-success" id="rxLivePill">LISTENING ON LORA</span>
+                </div>
+                <div class="card-header-actions">
+                  <button type="button" class="btn-xs-link" id="btnTestIncomingBottom">🧪 Test Receive</button>
+                  <span class="badge badge-neutral" id="rxTotalCountBadge">0 Received</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="received-messages-scroll" id="overviewReceivedFeed">
+                  <div class="traffic-empty-state">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <div style="font-weight: 600; margin-top: 6px; font-size: 13px;">No incoming LoRa messages received yet.</div>
+                    <div style="font-size: 11.5px; color: #777; margin-top: 2px;">When field nodes or Arduino send packets, they appear here in real-time with sound and speech.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Real Activity Audit Trail -->
+            <div class="content-card">
+              <div class="card-header">
+                <h2 class="card-title">System & Sensor Audit Log</h2>
+                <span class="badge badge-neutral">REAL TIMESTAMPS</span>
+              </div>
+              <div class="card-body">
+                <div class="audit-timeline" id="auditTimeline">
+                  <!-- Dynamically populated with real timestamps -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. LIVE MAP VIEW -->
+        <section class="view-panel" id="view-map">
+          <div class="content-card full-page-map-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">High-Precision Tactical GPS Map</h2>
+                <span class="badge badge-success font-mono" id="fullMapCoordsBadge">--° N, --° E</span>
+              </div>
+              <div class="map-controls-bar">
+                <div class="map-mode-toggle">
+                  <button type="button" class="map-mode-btn" id="btnFullModeRadar">📡 Offline Radar</button>
+                  <button type="button" class="map-mode-btn active" id="btnFullModeTiles">🌐 Street Map</button>
+                </div>
+                <button class="btn btn-sm btn-secondary" id="btnFullOpenGpsModal">⚙️ Set Base GPS</button>
+                <button class="btn btn-sm btn-secondary" id="btnFullMapCenter">Center Position</button>
+                <button class="btn btn-sm btn-secondary" id="btnToggleAccuracyCircle">Toggle Accuracy Ring</button>
+              </div>
+            </div>
+            <div class="map-body full-height">
+              <div id="fullMap" class="leaflet-map-element"></div>
+              <div id="fullRadarView" class="tactical-radar-view" style="display: none;">
+                <canvas id="fullRadarCanvas" class="tactical-radar-canvas"></canvas>
+                <div class="radar-overlay-info">
+                  <div class="radar-hud-coords">
+                    <span class="hud-label">BASE STATION GPS:</span>
+                    <span class="hud-val font-mono" id="fullRadarCoords">--° N, --° E</span>
+                  </div>
+                  <div class="radar-hud-scale">
+                    <span>Range: 5 km</span> · <span>Azimuth: 360° True North</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Floating Live GPS HUD -->
+              <div class="floating-gps-hud">
+                <div class="hud-title">LAPTOP HOST TELEMETRY</div>
+                <div class="hud-grid">
+                  <div>
+                    <span class="hud-label">LATITUDE</span>
+                    <span class="hud-val font-mono" id="hudLat">--</span>
+                  </div>
+                  <div>
+                    <span class="hud-label">LONGITUDE</span>
+                    <span class="hud-val font-mono" id="hudLng">--</span>
+                  </div>
+                  <div>
+                    <span class="hud-label">ACCURACY</span>
+                    <span class="hud-val font-mono" id="hudAccuracy">--</span>
+                  </div>
+                  <div>
+                    <span class="hud-label">ALTITUDE</span>
+                    <span class="hud-val font-mono" id="hudAltitude">--</span>
+                  </div>
+                  <div>
+                    <span class="hud-label">SPEED</span>
+                    <span class="hud-val font-mono" id="hudSpeed">0.0 km/h</span>
+                  </div>
+                  <div>
+                    <span class="hud-label">FIX STATUS</span>
+                    <span class="hud-val text-success" id="hudFixStatus">Acquiring...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. MESH NETWORK VIEW -->
+        <section class="view-panel" id="view-mesh">
+          <div class="content-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Mesh Network Topology</h2>
+                <span class="badge badge-neutral">REAL HARDWARE TOPOLOGY</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="topology-display-area" id="topologyArea">
+                <div class="waiting-box">
+                  <div class="waiting-icon-pulse">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="6" height="6" x="3" y="3" rx="1"/><rect width="6" height="6" x="15" y="3" rx="1"/><rect width="6" height="6" x="9" y="15" rx="1"/><path d="m6 9 3 6"/><path d="m18 9-3 6"/></svg>
+                  </div>
+                  <h3 class="waiting-title">Laptop Base Station Connected as Mesh Root</h3>
+                  <p class="waiting-desc">
+                    When you run your Arduino LoRa code on remote ESP32/transceiver nodes, their RF hop paths, RSSI signal values, and battery percentages will be visualized here live.
+                  </p>
+                  
+                  <!-- Expected Serial Protocol Format -->
+                  <div class="serial-format-box">
+                    <div class="format-header">Expected Arduino Serial Output Format (JSON or CSV):</div>
+                    <pre class="format-code"><code>// JSON Example from Arduino:
+{"nodeId":"NODE-01","role":"relay","lat":28.5946,"lng":83.9310,"rssi":-78,"snr":8.5,"battery":85}
+
+// Or CSV Example:
+NODE,NODE-01,relay,28.5946,83.9310,-78,8.5,85</code></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. EMERGENCY ALERTS VIEW -->
+        <section class="view-panel" id="view-alerts">
+          <div class="content-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Emergency Incidents & SOS Beacons</h2>
+                <span class="badge badge-neutral" id="alertsQueueBadge">0 Active</span>
+              </div>
+              <button class="btn btn-emergency btn-sm" id="btnCreateLocalSos">
+                Emit Local Base SOS
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="alertsQueueContainer" class="alerts-container">
+                <div class="empty-state-box">
+                  <div class="empty-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2D8A56" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                  </div>
+                  <h3>All Sectors Secure — Zero Active SOS Alerts</h3>
+                  <p>Distress beacons emitted by field nodes or manual SOS signals will appear here immediately with GPS coordinates and timestamps.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. DEVICES VIEW -->
+        <section class="view-panel" id="view-devices">
+          <div class="content-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Real Hardware Device Inventory</h2>
+                <span class="badge badge-neutral" id="devicesCountBadge">1 Device (Host)</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table" id="devicesTable">
+                  <thead>
+                    <tr>
+                      <th>Device ID / Name</th>
+                      <th>Type / Role</th>
+                      <th>GPS Coordinates</th>
+                      <th>Status</th>
+                      <th>Connection Interface</th>
+                      <th>Last Heartbeat</th>
+                    </tr>
+                  </thead>
+                  <tbody id="devicesTableBody">
+                    <tr>
+                      <td class="font-bold">
+                        <div>Laptop Host Station</div>
+                        <div class="sub-id font-mono">HOST-BASE-01</div>
+                      </td>
+                      <td><span class="tag-role">Coordinator</span></td>
+                      <td class="font-mono" id="deviceBaseCoords">Detecting GPS...</td>
+                      <td><span class="badge badge-success">Online (Host)</span></td>
+                      <td>Local Geolocation API</td>
+                      <td id="deviceBaseLastSeen">Live</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. MESSAGES VIEW -->
+        <section class="view-panel" id="view-messages">
+          <!-- Rescue Team Voice Processing & Triage Center -->
+          <div class="content-card mb-4" id="rescueVoiceProcessingCard" style="margin-bottom: 16px;">
+            <div class="card-header">
+              <div class="card-title-group">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E85D3F" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                <h2 class="card-title">Rescue Team Voice Processing Center (LoRa Audio Triage)</h2>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <span class="badge badge-emergency" id="voiceQueueCountBadge">0 Voice SOS</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnSimulateVoiceSos" title="Simulate incoming field voice note from stranded victim">
+                  🧪 Simulate Victim Voice SOS
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="voice-triage-filter-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+                <div style="font-size:12px; color:var(--txt-secondary);">
+                  Audible voice messages from blind, injured, and illiterate field victims requiring immediate emergency dispatch.
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="chip-preset active" id="btnFilterVoiceAll">All Voice Notes (<span id="countVoiceAll">0</span>)</button>
+                  <button type="button" class="chip-preset" id="btnFilterVoiceCritical">🚨 Critical (<span id="countVoiceCritical">0</span>)</button>
+                  <button type="button" class="chip-preset" id="btnFilterVoiceDispatched">🚑 Dispatched (<span id="countVoiceDispatched">0</span>)</button>
+                </div>
+              </div>
+
+              <!-- List of Processed Voice Notes -->
+              <div id="rescueVoiceNotesList" class="voice-notes-queue">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+          </div>
+
+          <div class="layout-split">
+            <!-- Messages Log -->
+            <div class="content-card">
+              <div class="card-header">
+                <h2 class="card-title">LoRa Mesh Radio Terminal</h2>
+                <span class="badge badge-neutral">SERIAL TRANSCEIVER</span>
+              </div>
+              <div class="card-body flex-col">
+                <div class="messages-terminal" id="messagesTerminal">
+                  <div class="terminal-entry system">
+                    <span class="timestamp" id="terminalInitTime">--:--:--</span>
+                    <span class="entry-msg">LoraNet Serial Radio interface initialized. Awaiting Arduino gateway connection.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transmitter Form -->
+            <div class="content-card">
+              <div class="card-header">
+                <h2 class="card-title">Transmit Packet</h2>
+                <span class="badge badge-success">READY</span>
+              </div>
+              <div class="card-body">
+                <form id="msgSendForm" class="form-vertical">
+                  <div class="form-group">
+                    <label class="form-label">Destination Node</label>
+                    <select class="form-input" id="msgRecipient">
+                      <option value="BROADCAST">BROADCAST (All Field Nodes)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-input" id="msgPriority">
+                      <option value="NORMAL">Normal Priority</option>
+                      <option value="HIGH">High Priority</option>
+                      <option value="EMERGENCY">Emergency SOS Broadcast</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Message Payload (ASCII)</label>
+                    <textarea class="form-input" id="msgContent" rows="4" placeholder="Enter message to send over LoRa..." maxlength="222"></textarea>
+                    <div class="char-count"><span id="msgCharCount">0</span> / 222 bytes</div>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary w-full">
+                    Transmit Packet over LoRa / Serial
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. SETTINGS VIEW -->
+        <section class="view-panel" id="view-settings">
+          <div class="content-card max-w-settings">
+            <div class="card-header">
+              <h2 class="card-title">Hardware & GPS System Settings</h2>
+            </div>
+            <div class="card-body">
+              <div class="settings-grid">
+                <div class="setting-item">
+                  <div class="setting-label">Serial Baud Rate (Arduino USB)</div>
+                  <div class="setting-desc">Standard baud rate for ESP32/Arduino LoRa Gateway sketch</div>
+                  <select class="form-input" id="settingsBaudRate">
+                    <option value="115200" selected>115200 bps (Recommended)</option>
+                    <option value="9600">9600 bps</option>
+                    <option value="57600">57600 bps</option>
+                    <option value="921600">921600 bps</option>
+                  </select>
+                </div>
+
+                <div class="setting-item">
+                  <div class="setting-label">Laptop GPS Tracking Mode</div>
+                  <div class="setting-desc">High accuracy uses laptop WiFi/GPS triangulation</div>
+                  <div class="toggle-row">
+                    <span>High Accuracy Sensor Fusion</span>
+                    <input type="checkbox" id="settingsHighAccuracy" checked>
+                  </div>
+                </div>
+
+                <div class="setting-item">
+                  <div class="setting-label">Audible SOS Emergency Tone</div>
+                  <div class="setting-desc">Plays alert chime when distress packet is received</div>
+                  <div class="toggle-row">
+                    <span>Sound Alarm on SOS</span>
+                    <input type="checkbox" id="settingsSoundAlert" checked>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Calibrate / Set Base GPS Modal (100% Offline Calibration) -->
+  <div class="modal-backdrop" id="modalGpsCalibration" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D8A56" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" x2="12" y1="2" y2="4"/><line x1="12" x2="12" y1="20" y2="22"/><line x1="2" x2="4" y1="12" y2="12"/><line x1="20" x2="22" y1="12" y2="12"/></svg>
+          <h3 class="modal-title">Calibrate Host Base Station Location</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseGpsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          When offline or without Wi-Fi triangulation, anchor your Host Laptop coordinates manually or via USB GNSS receiver.
+        </p>
+        
+        <div class="form-row-split mt-3">
+          <div class="form-group flex-1">
+            <label class="form-label">Latitude (° Decimal)</label>
+            <input type="number" step="0.00001" class="form-input font-mono" id="inputManualLat" placeholder="e.g. 11.05527">
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label">Longitude (° Decimal)</label>
+            <input type="number" step="0.00001" class="form-input font-mono" id="inputManualLng" placeholder="e.g. 78.04733">
+          </div>
+        </div>
+
+        <div class="quick-presets-row mt-3">
+          <span class="preset-label">Quick Set:</span>
+          <button type="button" class="chip-preset" id="btnSetBrowserGps">🌐 Try Laptop Sensor</button>
+          <button type="button" class="chip-preset" id="btnSetLastCached">💾 Use Saved Fix</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelGpsModal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnSaveManualGps">Anchor & Save Location</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessible Voice Note SOS Modal (For Blind & Illiterate Users) -->
+  <div class="modal-backdrop" id="modalVoiceSos" style="display: none;">
+    <div class="modal-card modal-voice-sos">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E85D3F" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <h3 class="modal-title">🎙️ Accessible Voice Note SOS</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseVoiceModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="voice-access-banner">
+          <span style="font-size: 20px;">♿</span>
+          <div>
+            <strong>High-Accessibility Voice Mode:</strong> Speak naturally. Spoken audio is recorded, real-time transcribed, and automatically attached with your exact GPS coordinates for the Rescue Team.
+          </div>
+        </div>
+
+        <!-- Big Mic Hero Recording Area -->
+        <div class="mic-hero-area">
+          <button type="button" class="big-mic-btn" id="btnModalMicRecord" title="Press to Start / Stop Recording">
+            <svg id="micIconNormal" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            <svg id="micIconStop" width="34" height="34" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          </button>
+          
+          <div class="mic-status-label" id="voiceModalMicStatus">Click Mic to Speak Your Emergency</div>
+          <div class="mic-status-sub" id="voiceModalMicSub">Or choose a 1-click distress preset below (No reading/typing needed)</div>
+          
+          <div class="voice-duration-counter" id="voiceModalDuration" style="display: none;">00:00</div>
+
+          <!-- Animated Voice Bars -->
+          <div class="voice-audio-bars" id="voiceModalAudioBars">
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+            <div class="voice-audio-bar"></div>
+          </div>
+        </div>
+
+        <!-- Live Transcription & GPS Attachment -->
+        <div class="voice-transcript-area">
+          <div class="voice-transcript-header">
+            <span class="voice-transcript-title">Voice Transcript (Automatic Speech-to-Text)</span>
+            <span class="badge badge-success" id="voiceModalGpsCoords">📍 Attaching Real GPS...</span>
+          </div>
+          <div class="voice-transcript-text empty" id="voiceModalTranscript">
+            "Your spoken voice will be transcribed here automatically..."
+          </div>
+        </div>
+
+        <!-- 1-Click Distress Audio Presets (for Illiterate or Panicked Users) -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--txt-secondary); margin-bottom: 8px;">
+          ⚡ Quick 1-Touch Voice Presets (Click to speak & send instantly):
+        </div>
+        <div class="preset-voice-grid">
+          <div class="preset-voice-item" data-preset="trapped">
+            <span class="preset-voice-icon">🧱</span>
+            <div>
+              <div class="preset-voice-title">Trapped Under Debris</div>
+              <div class="preset-voice-desc">"I am trapped under debris, unable to move. Need immediate rescue."</div>
+            </div>
+          </div>
+
+          <div class="preset-voice-item" data-preset="medical">
+            <span class="preset-voice-icon">🚑</span>
+            <div>
+              <div class="preset-voice-title">Critical Medical Emergency</div>
+              <div class="preset-voice-desc">"Severe injury, bleeding and difficulty breathing. Need doctor."</div>
+            </div>
+          </div>
+
+          <div class="preset-voice-item" data-preset="flood">
+            <span class="preset-voice-icon">🌊</span>
+            <div>
+              <div class="preset-voice-title">Flood Waters Rising</div>
+              <div class="preset-voice-desc">"Water level rising rapidly. Trapped on rooftop with no exit."</div>
+            </div>
+          </div>
+
+          <div class="preset-voice-item" data-preset="blind">
+            <span class="preset-voice-icon">🦯</span>
+            <div>
+              <div class="preset-voice-title">Blind / Disabled Person Stranded</div>
+              <div class="preset-voice-desc">"Visually impaired individual alone. Need evacuation guidance."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelVoiceModal">Cancel</button>
+        <button type="button" class="btn btn-emergency btn-sm" id="btnTransmitVoiceSos" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <span>Transmit Voice SOS to Rescue Mesh</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Leaflet JS (Local Vendor Copy - 100% Offline Compatible) -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+  
+  <!-- App JS -->
+  <script src="app.js"></script>
+</body>
+</html>
